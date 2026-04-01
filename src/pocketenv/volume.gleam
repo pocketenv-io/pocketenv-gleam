@@ -25,11 +25,11 @@ pub fn list(
   client: Client,
   sandbox_id: String,
 ) -> Result(List(Volume), PocketenvError) {
-  use body <- result.try(do_get(
-    client,
-    "/xrpc/io.pocketenv.volume.getVolumes",
-    [#("sandboxId", sandbox_id)],
-  ))
+  use body <- result.try(
+    do_get(client, "/xrpc/io.pocketenv.volume.getVolumes", [
+      #("sandboxId", sandbox_id),
+    ]),
+  )
   json.parse(body, {
     use volumes <- decode.field("volumes", decode.list(volume_decoder()))
     decode.success(volumes)
@@ -51,16 +51,18 @@ pub fn create(
   path: String,
 ) -> Result(Nil, PocketenvError) {
   let body =
-    json.to_string(json.object([
-      #(
-        "volume",
-        json.object([
-          #("sandboxId", json.string(sandbox_id)),
-          #("name", json.string(name)),
-          #("path", json.string(path)),
-        ]),
-      ),
-    ]))
+    json.to_string(
+      json.object([
+        #(
+          "volume",
+          json.object([
+            #("sandboxId", json.string(sandbox_id)),
+            #("name", json.string(name)),
+            #("path", json.string(path)),
+          ]),
+        ),
+      ]),
+    )
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.volume.addVolume",

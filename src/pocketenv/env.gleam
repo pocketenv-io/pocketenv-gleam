@@ -67,16 +67,18 @@ pub fn put(
   value: String,
 ) -> Result(Nil, PocketenvError) {
   let body =
-    json.to_string(json.object([
-      #(
-        "variable",
-        json.object([
-          #("sandboxId", json.string(sandbox_id)),
-          #("name", json.string(name)),
-          #("value", json.string(value)),
-        ]),
-      ),
-    ]))
+    json.to_string(
+      json.object([
+        #(
+          "variable",
+          json.object([
+            #("sandboxId", json.string(sandbox_id)),
+            #("name", json.string(name)),
+            #("value", json.string(value)),
+          ]),
+        ),
+      ]),
+    )
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.variable.addVariable",
@@ -103,5 +105,10 @@ pub fn variable_decoder() -> decode.Decoder(Variable) {
   use name <- decode.field("name", decode.string)
   use value <- decode.field("value", decode.string)
   use created_at <- decode.field("createdAt", decode.string)
-  decode.success(Variable(id: id, name: name, value: value, created_at: created_at))
+  decode.success(Variable(
+    id: id,
+    name: name,
+    value: value,
+    created_at: created_at,
+  ))
 }

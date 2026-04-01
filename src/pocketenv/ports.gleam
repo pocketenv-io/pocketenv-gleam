@@ -24,11 +24,11 @@ pub fn list(
   client: Client,
   sandbox_id: String,
 ) -> Result(List(Port), PocketenvError) {
-  use body <- result.try(do_get(
-    client,
-    "/xrpc/io.pocketenv.sandbox.getExposedPorts",
-    [#("id", sandbox_id)],
-  ))
+  use body <- result.try(
+    do_get(client, "/xrpc/io.pocketenv.sandbox.getExposedPorts", [
+      #("id", sandbox_id),
+    ]),
+  )
   json.parse(body, {
     use ports <- decode.field("ports", decode.list(port_decoder()))
     decode.success(ports)
@@ -49,5 +49,9 @@ pub fn port_decoder() -> decode.Decoder(Port) {
     None,
     decode.optional(decode.string),
   )
-  decode.success(Port(port: port, description: description, preview_url: preview_url))
+  decode.success(Port(
+    port: port,
+    description: description,
+    preview_url: preview_url,
+  ))
 }

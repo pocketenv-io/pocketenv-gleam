@@ -76,11 +76,9 @@ pub fn new_client_with_base_url(base_url: String, token: String) -> Client {
 /// io.println(profile.handle)
 /// ```
 pub fn get_profile(client: Client) -> Result(Profile, PocketenvError) {
-  use body <- result.try(do_get(
-    client,
-    "/xrpc/io.pocketenv.actor.getProfile",
-    [],
-  ))
+  use body <- result.try(
+    do_get(client, "/xrpc/io.pocketenv.actor.getProfile", []),
+  )
   json.parse(body, profile_decoder())
   |> result.map_error(JsonDecodeError)
 }

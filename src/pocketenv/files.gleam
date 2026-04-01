@@ -25,11 +25,11 @@ pub fn list(
   client: Client,
   sandbox_id: String,
 ) -> Result(List(File), PocketenvError) {
-  use body <- result.try(do_get(
-    client,
-    "/xrpc/io.pocketenv.file.getFiles",
-    [#("sandboxId", sandbox_id)],
-  ))
+  use body <- result.try(
+    do_get(client, "/xrpc/io.pocketenv.file.getFiles", [
+      #("sandboxId", sandbox_id),
+    ]),
+  )
   json.parse(body, {
     use files <- decode.field("files", decode.list(file_decoder()))
     decode.success(files)
@@ -51,16 +51,18 @@ pub fn write(
   content: String,
 ) -> Result(Nil, PocketenvError) {
   let body =
-    json.to_string(json.object([
-      #(
-        "file",
-        json.object([
-          #("sandboxId", json.string(sandbox_id)),
-          #("path", json.string(path)),
-          #("content", json.string(content)),
-        ]),
-      ),
-    ]))
+    json.to_string(
+      json.object([
+        #(
+          "file",
+          json.object([
+            #("sandboxId", json.string(sandbox_id)),
+            #("path", json.string(path)),
+            #("content", json.string(content)),
+          ]),
+        ),
+      ]),
+    )
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.file.addFile",

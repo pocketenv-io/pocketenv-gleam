@@ -99,11 +99,11 @@ pub fn get_tailscale_auth_key(
   client: Client,
   sandbox_id: String,
 ) -> Result(Option(String), PocketenvError) {
-  use body <- result.try(do_get(
-    client,
-    "/xrpc/io.pocketenv.sandbox.getTailscaleAuthKey",
-    [#("id", sandbox_id)],
-  ))
+  use body <- result.try(
+    do_get(client, "/xrpc/io.pocketenv.sandbox.getTailscaleAuthKey", [
+      #("id", sandbox_id),
+    ]),
+  )
   json.parse(body, {
     use key <- decode.optional_field(
       "tailscaleAuthKey",

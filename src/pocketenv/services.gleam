@@ -36,11 +36,11 @@ pub fn list(
   client: Client,
   sandbox_id: String,
 ) -> Result(List(Service), PocketenvError) {
-  use body <- result.try(do_get(
-    client,
-    "/xrpc/io.pocketenv.service.getServices",
-    [#("sandboxId", sandbox_id)],
-  ))
+  use body <- result.try(
+    do_get(client, "/xrpc/io.pocketenv.service.getServices", [
+      #("sandboxId", sandbox_id),
+    ]),
+  )
   json.parse(body, {
     use services <- decode.field("services", decode.list(service_decoder()))
     decode.success(services)
@@ -79,8 +79,7 @@ pub fn create(
     None -> service_fields
   }
   let service_fields = case description {
-    Some(d) ->
-      list.append(service_fields, [#("description", json.string(d))])
+    Some(d) -> list.append(service_fields, [#("description", json.string(d))])
     None -> service_fields
   }
   let body =
@@ -95,10 +94,7 @@ pub fn create(
 }
 
 /// Starts the service identified by `service_id`.
-pub fn start(
-  client: Client,
-  service_id: String,
-) -> Result(Nil, PocketenvError) {
+pub fn start(client: Client, service_id: String) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.service.startService",
@@ -134,10 +130,7 @@ pub fn restart(
 }
 
 /// Deletes the service identified by `service_id`.
-pub fn delete(
-  client: Client,
-  service_id: String,
-) -> Result(Nil, PocketenvError) {
+pub fn delete(client: Client, service_id: String) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.service.deleteService",
@@ -152,8 +145,16 @@ pub fn service_decoder() -> decode.Decoder(Service) {
   use id <- decode.field("id", decode.string)
   use name <- decode.field("name", decode.string)
   use command <- decode.field("command", decode.string)
-  use ports <- decode.optional_field("ports", None, decode.optional(decode.list(decode.int)))
-  use description <- decode.optional_field("description", None, decode.optional(decode.string))
+  use ports <- decode.optional_field(
+    "ports",
+    None,
+    decode.optional(decode.list(decode.int)),
+  )
+  use description <- decode.optional_field(
+    "description",
+    None,
+    decode.optional(decode.string),
+  )
   use status <- decode.field("status", decode.string)
   use created_at <- decode.field("createdAt", decode.string)
   decode.success(Service(

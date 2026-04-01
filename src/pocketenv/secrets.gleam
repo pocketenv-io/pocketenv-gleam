@@ -67,16 +67,18 @@ pub fn put(
   value: String,
 ) -> Result(Nil, PocketenvError) {
   let body =
-    json.to_string(json.object([
-      #(
-        "secret",
-        json.object([
-          #("sandboxId", json.string(sandbox_id)),
-          #("name", json.string(name)),
-          #("value", json.string(value)),
-        ]),
-      ),
-    ]))
+    json.to_string(
+      json.object([
+        #(
+          "secret",
+          json.object([
+            #("sandboxId", json.string(sandbox_id)),
+            #("name", json.string(name)),
+            #("value", json.string(value)),
+          ]),
+        ),
+      ]),
+    )
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.secret.addSecret",
