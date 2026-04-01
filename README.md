@@ -65,7 +65,7 @@ import pocketenv/env
 import gleam/option.{None}
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let sandbox_id = "sandbox-abc123"
 
   // Set a variable
@@ -92,7 +92,7 @@ import pocketenv/secrets
 import gleam/option.{None}
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let sandbox_id = "sandbox-abc123"
 
   // Store a secret
@@ -118,7 +118,7 @@ import pocketenv
 import pocketenv/files
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let sandbox_id = "sandbox-abc123"
 
   // Write a file into the sandbox
@@ -145,7 +145,7 @@ import pocketenv
 import pocketenv/volume
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let sandbox_id = "sandbox-abc123"
 
   // Mount a persistent volume
@@ -172,7 +172,7 @@ import pocketenv/services
 import gleam/option.{None, Some}
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let sandbox_id = "sandbox-abc123"
 
   // Register and start a web server service
@@ -209,7 +209,7 @@ import gleam/io
 import gleam/option.{None, Some}
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let sandbox_id = "sandbox-abc123"
 
   // Expose a port and get a preview URL
@@ -237,7 +237,7 @@ import pocketenv
 import gleam/io
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client("your-token")
   let assert Ok(profile) = pocketenv.get_profile(client)
   io.println("Logged in as: " <> profile.handle)
 }
