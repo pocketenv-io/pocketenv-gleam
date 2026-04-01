@@ -10,29 +10,27 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import pocketenv.{
-  type Client, type PocketenvError, JsonDecodeError, do_get, do_post,
-}
+import pocketenv.{type PocketenvError, JsonDecodeError, do_get, do_post}
+import pocketenv/sandbox.{type ConnectedSandbox}
 
 /// A secret stored in a sandbox. Only the `name` is exposed; the value is never returned.
 pub type Secret {
   Secret(id: String, name: String, created_at: String)
 }
 
-/// Lists secret names for `sandbox_id`. Optionally paginate with `limit` and `offset`.
+/// Lists secret names for the sandbox. Optionally paginate with `limit` and `offset`.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(secrets) = secrets.list(client, sandbox_id, None, None)
+/// let assert Ok(secrets) = sb |> secrets.list(None, None)
 /// ```
 pub fn list(
-  client: Client,
-  sandbox_id: String,
+  sb: ConnectedSandbox,
   limit: Option(Int),
   offset: Option(Int),
 ) -> Result(List(Secret), PocketenvError) {
-  let query = [#("sandboxId", sandbox_id)]
+  let query = [#("sandboxId", sb.data.id)]
   let query = case limit {
     Some(l) -> list.append(query, [#("limit", int.to_string(l))])
     None -> query
@@ -42,7 +40,7 @@ pub fn list(
     None -> query
   }
   use body <- result.try(do_get(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.secret.getSecrets",
     query,
   ))
@@ -53,16 +51,15 @@ pub fn list(
   |> result.map_error(JsonDecodeError)
 }
 
-/// Creates or updates a secret named `name` with `value` in `sandbox_id`.
+/// Creates or updates a secret named `name` with `value`.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(Nil) = secrets.put(client, sandbox_id, "DB_PASSWORD", "s3cr3t")
+/// let assert Ok(Nil) = sb |> secrets.put("DB_PASSWORD", "s3cr3t")
 /// ```
 pub fn put(
-  client: Client,
-  sandbox_id: String,
+  sb: ConnectedSandbox,
   name: String,
   value: String,
 ) -> Result(Nil, PocketenvError) {
@@ -72,7 +69,7 @@ pub fn put(
         #(
           "secret",
           json.object([
-            #("sandboxId", json.string(sandbox_id)),
+            #("sandboxId", json.string(sb.data.id)),
             #("name", json.string(name)),
             #("value", json.string(value)),
           ]),
@@ -80,7 +77,7 @@ pub fn put(
       ]),
     )
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.secret.addSecret",
     [],
     body,
@@ -89,9 +86,9 @@ pub fn put(
 }
 
 /// Deletes the secret identified by `id`.
-pub fn delete(client: Client, id: String) -> Result(Nil, PocketenvError) {
+pub fn delete(sb: ConnectedSandbox, id: String) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.secret.deleteSecret",
     [#("id", id)],
     "{}",

@@ -5,29 +5,25 @@
 import gleam/dynamic/decode
 import gleam/json
 import gleam/result
-import pocketenv.{
-  type Client, type PocketenvError, JsonDecodeError, do_get, do_post,
-}
+import pocketenv.{type PocketenvError, JsonDecodeError, do_get, do_post}
+import pocketenv/sandbox.{type ConnectedSandbox}
 
 /// Metadata for a file stored in a sandbox.
 pub type File {
   File(id: String, path: String, created_at: String)
 }
 
-/// Lists all files in `sandbox_id`.
+/// Lists all files in the sandbox.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(files) = files.list(client, sandbox_id)
+/// let assert Ok(files) = sb |> files.list()
 /// ```
-pub fn list(
-  client: Client,
-  sandbox_id: String,
-) -> Result(List(File), PocketenvError) {
+pub fn list(sb: ConnectedSandbox) -> Result(List(File), PocketenvError) {
   use body <- result.try(
-    do_get(client, "/xrpc/io.pocketenv.file.getFiles", [
-      #("sandboxId", sandbox_id),
+    do_get(sb.client, "/xrpc/io.pocketenv.file.getFiles", [
+      #("sandboxId", sb.data.id),
     ]),
   )
   json.parse(body, {
@@ -37,16 +33,15 @@ pub fn list(
   |> result.map_error(JsonDecodeError)
 }
 
-/// Writes (or overwrites) a file at `path` with `content` in `sandbox_id`.
+/// Writes (or overwrites) a file at `path` with `content`.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(Nil) = files.write(client, sandbox_id, "/app/.env", "PORT=8080\n")
+/// let assert Ok(Nil) = sb |> files.write("/app/.env", "PORT=8080\n")
 /// ```
 pub fn write(
-  client: Client,
-  sandbox_id: String,
+  sb: ConnectedSandbox,
   path: String,
   content: String,
 ) -> Result(Nil, PocketenvError) {
@@ -56,7 +51,7 @@ pub fn write(
         #(
           "file",
           json.object([
-            #("sandboxId", json.string(sandbox_id)),
+            #("sandboxId", json.string(sb.data.id)),
             #("path", json.string(path)),
             #("content", json.string(content)),
           ]),
@@ -64,7 +59,7 @@ pub fn write(
       ]),
     )
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.file.addFile",
     [],
     body,
@@ -73,9 +68,9 @@ pub fn write(
 }
 
 /// Deletes the file identified by `id`.
-pub fn delete(client: Client, id: String) -> Result(Nil, PocketenvError) {
+pub fn delete(sb: ConnectedSandbox, id: String) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.file.deleteFile",
     [#("id", id)],
     "{}",

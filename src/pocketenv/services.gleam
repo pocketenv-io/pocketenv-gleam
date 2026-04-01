@@ -8,9 +8,8 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import pocketenv.{
-  type Client, type PocketenvError, JsonDecodeError, do_get, do_post,
-}
+import pocketenv.{type PocketenvError, JsonDecodeError, do_get, do_post}
+import pocketenv/sandbox.{type ConnectedSandbox}
 
 /// A service running (or registered to run) inside a sandbox.
 pub type Service {
@@ -25,20 +24,17 @@ pub type Service {
   )
 }
 
-/// Lists all services registered in `sandbox_id`.
+/// Lists all services registered in the sandbox.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(svcs) = services.list(client, sandbox_id)
+/// let assert Ok(svcs) = sb |> services.list()
 /// ```
-pub fn list(
-  client: Client,
-  sandbox_id: String,
-) -> Result(List(Service), PocketenvError) {
+pub fn list(sb: ConnectedSandbox) -> Result(List(Service), PocketenvError) {
   use body <- result.try(
-    do_get(client, "/xrpc/io.pocketenv.service.getServices", [
-      #("sandboxId", sandbox_id),
+    do_get(sb.client, "/xrpc/io.pocketenv.service.getServices", [
+      #("sandboxId", sb.data.id),
     ]),
   )
   json.parse(body, {
@@ -48,7 +44,7 @@ pub fn list(
   |> result.map_error(JsonDecodeError)
 }
 
-/// Registers a new service in `sandbox_id`.
+/// Registers a new service in the sandbox.
 ///
 /// - `name` — unique name for the service
 /// - `command` — shell command to run
@@ -59,11 +55,10 @@ pub fn list(
 ///
 /// ```gleam
 /// let assert Ok(Nil) =
-///   services.create(client, sandbox_id, "api", "node server.js", Some([3000]), None)
+///   sb |> services.create("api", "node server.js", Some([3000]), None)
 /// ```
 pub fn create(
-  client: Client,
-  sandbox_id: String,
+  sb: ConnectedSandbox,
   name: String,
   command: String,
   ports: Option(List(Int)),
@@ -85,18 +80,21 @@ pub fn create(
   let body =
     json.to_string(json.object([#("service", json.object(service_fields))]))
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.service.addService",
-    [#("sandboxId", sandbox_id)],
+    [#("sandboxId", sb.data.id)],
     body,
   ))
   Ok(Nil)
 }
 
 /// Starts the service identified by `service_id`.
-pub fn start(client: Client, service_id: String) -> Result(Nil, PocketenvError) {
+pub fn start(
+  sb: ConnectedSandbox,
+  service_id: String,
+) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.service.startService",
     [#("serviceId", service_id)],
     "{}",
@@ -105,9 +103,12 @@ pub fn start(client: Client, service_id: String) -> Result(Nil, PocketenvError) 
 }
 
 /// Stops the service identified by `service_id`.
-pub fn stop(client: Client, service_id: String) -> Result(Nil, PocketenvError) {
+pub fn stop(
+  sb: ConnectedSandbox,
+  service_id: String,
+) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.service.stopService",
     [#("serviceId", service_id)],
     "{}",
@@ -117,11 +118,11 @@ pub fn stop(client: Client, service_id: String) -> Result(Nil, PocketenvError) {
 
 /// Restarts the service identified by `service_id`.
 pub fn restart(
-  client: Client,
+  sb: ConnectedSandbox,
   service_id: String,
 ) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.service.restartService",
     [#("serviceId", service_id)],
     "{}",
@@ -130,9 +131,12 @@ pub fn restart(
 }
 
 /// Deletes the service identified by `service_id`.
-pub fn delete(client: Client, service_id: String) -> Result(Nil, PocketenvError) {
+pub fn delete(
+  sb: ConnectedSandbox,
+  service_id: String,
+) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.service.deleteService",
     [#("serviceId", service_id)],
     "{}",

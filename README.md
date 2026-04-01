@@ -61,23 +61,25 @@ pub fn main() {
 
 ```gleam
 import pocketenv
+import pocketenv/sandbox
 import pocketenv/env
-import gleam/option.{None}
+import gleam/option.{None, Some}
 
 pub fn main() {
   let client = pocketenv.new_client("your-token")
-  let sandbox_id = "sandbox-abc123"
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
 
   // Set a variable
-  let assert Ok(Nil) = env.put(client, sandbox_id, "DATABASE_URL", "postgres://localhost/mydb")
+  let assert Ok(Nil) = sb |> env.put("DATABASE_URL", "postgres://localhost/mydb")
 
   // List variables
-  let assert Ok(vars) = env.list(client, sandbox_id, None, None)
+  let assert Ok(vars) = sb |> env.list(None, None)
 
   // Delete a variable by its id
   case vars {
     [first, ..] -> {
-      let assert Ok(Nil) = env.delete(client, first.id)
+      let assert Ok(Nil) = sb |> env.delete(first.id)
     }
     [] -> Nil
   }
@@ -88,23 +90,25 @@ pub fn main() {
 
 ```gleam
 import pocketenv
+import pocketenv/sandbox
 import pocketenv/secrets
-import gleam/option.{None}
+import gleam/option.{None, Some}
 
 pub fn main() {
   let client = pocketenv.new_client("your-token")
-  let sandbox_id = "sandbox-abc123"
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
 
   // Store a secret
-  let assert Ok(Nil) = secrets.put(client, sandbox_id, "API_KEY", "super-secret-value")
+  let assert Ok(Nil) = sb |> secrets.put("API_KEY", "super-secret-value")
 
   // List secret names (values are never returned)
-  let assert Ok(all) = secrets.list(client, sandbox_id, None, None)
+  let assert Ok(all) = sb |> secrets.list(None, None)
 
   // Delete a secret
   case all {
     [first, ..] -> {
-      let assert Ok(Nil) = secrets.delete(client, first.id)
+      let assert Ok(Nil) = sb |> secrets.delete(first.id)
     }
     [] -> Nil
   }
@@ -115,23 +119,25 @@ pub fn main() {
 
 ```gleam
 import pocketenv
+import pocketenv/sandbox
 import pocketenv/files
+import gleam/option.{Some}
 
 pub fn main() {
   let client = pocketenv.new_client("your-token")
-  let sandbox_id = "sandbox-abc123"
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
 
   // Write a file into the sandbox
-  let assert Ok(Nil) =
-    files.write(client, sandbox_id, "/app/config.json", "{\"debug\": true}")
+  let assert Ok(Nil) = sb |> files.write("/app/config.json", "{\"debug\": true}")
 
   // List files
-  let assert Ok(all) = files.list(client, sandbox_id)
+  let assert Ok(all) = sb |> files.list()
 
   // Delete a file
   case all {
     [first, ..] -> {
-      let assert Ok(Nil) = files.delete(client, first.id)
+      let assert Ok(Nil) = sb |> files.delete(first.id)
     }
     [] -> Nil
   }
@@ -142,22 +148,25 @@ pub fn main() {
 
 ```gleam
 import pocketenv
+import pocketenv/sandbox
 import pocketenv/volume
+import gleam/option.{Some}
 
 pub fn main() {
   let client = pocketenv.new_client("your-token")
-  let sandbox_id = "sandbox-abc123"
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
 
   // Mount a persistent volume
-  let assert Ok(Nil) = volume.create(client, sandbox_id, "data-vol", "/mnt/data")
+  let assert Ok(Nil) = sb |> volume.create("data-vol", "/mnt/data")
 
   // List volumes
-  let assert Ok(vols) = volume.list(client, sandbox_id)
+  let assert Ok(vols) = sb |> volume.list()
 
   // Delete a volume
   case vols {
     [first, ..] -> {
-      let assert Ok(Nil) = volume.delete(client, first.id)
+      let assert Ok(Nil) = sb |> volume.delete(first.id)
     }
     [] -> Nil
   }
@@ -168,31 +177,32 @@ pub fn main() {
 
 ```gleam
 import pocketenv
+import pocketenv/sandbox
 import pocketenv/services
 import gleam/option.{None, Some}
 
 pub fn main() {
   let client = pocketenv.new_client("your-token")
-  let sandbox_id = "sandbox-abc123"
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
 
-  // Register and start a web server service
+  // Register a web server service
   let assert Ok(Nil) =
-    services.create(
-      client,
-      sandbox_id,
+    sb
+    |> services.create(
       "web",
       "python -m http.server 8080",
       Some([8080]),
       Some("Simple HTTP server"),
     )
 
-  let assert Ok(svcs) = services.list(client, sandbox_id)
+  let assert Ok(svcs) = sb |> services.list()
   case svcs {
     [svc, ..] -> {
-      let assert Ok(Nil) = services.start(client, svc.id)
-      let assert Ok(Nil) = services.restart(client, svc.id)
-      let assert Ok(Nil) = services.stop(client, svc.id)
-      let assert Ok(Nil) = services.delete(client, svc.id)
+      let assert Ok(Nil) = sb |> services.start(svc.id)
+      let assert Ok(Nil) = sb |> services.restart(svc.id)
+      let assert Ok(Nil) = sb |> services.stop(svc.id)
+      let assert Ok(Nil) = sb |> services.delete(svc.id)
     }
     [] -> Nil
   }
@@ -203,30 +213,30 @@ pub fn main() {
 
 ```gleam
 import pocketenv
+import pocketenv/sandbox
 import pocketenv/network
 import pocketenv/ports
 import gleam/io
-import gleam/option.{None, Some}
+import gleam/option.{Some}
 
 pub fn main() {
   let client = pocketenv.new_client("your-token")
-  let sandbox_id = "sandbox-abc123"
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
 
   // Expose a port and get a preview URL
-  let assert Ok(preview_url) =
-    network.expose(client, sandbox_id, 3000, Some("Dev server"))
+  let assert Ok(preview_url) = sb |> network.expose(3000, Some("Dev server"))
   io.debug(preview_url)
 
   // List currently exposed ports
-  let assert Ok(exposed) = ports.list(client, sandbox_id)
+  let assert Ok(exposed) = sb |> ports.list()
   io.debug(exposed)
 
   // Unexpose the port
-  let assert Ok(Nil) = network.unexpose(client, sandbox_id, 3000)
+  let assert Ok(Nil) = sb |> network.unexpose(3000)
 
   // Configure Tailscale networking
-  let assert Ok(Nil) =
-    network.setup_tailscale(client, sandbox_id, "tskey-auth-xxxx")
+  let assert Ok(Nil) = sb |> network.setup_tailscale("tskey-auth-xxxx")
 }
 ```
 

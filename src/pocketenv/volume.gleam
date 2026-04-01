@@ -5,29 +5,25 @@
 import gleam/dynamic/decode
 import gleam/json
 import gleam/result
-import pocketenv.{
-  type Client, type PocketenvError, JsonDecodeError, do_get, do_post,
-}
+import pocketenv.{type PocketenvError, JsonDecodeError, do_get, do_post}
+import pocketenv/sandbox.{type ConnectedSandbox}
 
 /// A persistent volume mounted in a sandbox.
 pub type Volume {
   Volume(id: String, name: String, path: String, created_at: String)
 }
 
-/// Lists all volumes attached to `sandbox_id`.
+/// Lists all volumes attached to the sandbox.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(vols) = volume.list(client, sandbox_id)
+/// let assert Ok(vols) = sb |> volume.list()
 /// ```
-pub fn list(
-  client: Client,
-  sandbox_id: String,
-) -> Result(List(Volume), PocketenvError) {
+pub fn list(sb: ConnectedSandbox) -> Result(List(Volume), PocketenvError) {
   use body <- result.try(
-    do_get(client, "/xrpc/io.pocketenv.volume.getVolumes", [
-      #("sandboxId", sandbox_id),
+    do_get(sb.client, "/xrpc/io.pocketenv.volume.getVolumes", [
+      #("sandboxId", sb.data.id),
     ]),
   )
   json.parse(body, {
@@ -37,16 +33,15 @@ pub fn list(
   |> result.map_error(JsonDecodeError)
 }
 
-/// Creates a volume named `name` mounted at `path` in `sandbox_id`.
+/// Creates a volume named `name` mounted at `path`.
 ///
 /// ## Example
 ///
 /// ```gleam
-/// let assert Ok(Nil) = volume.create(client, sandbox_id, "data", "/mnt/data")
+/// let assert Ok(Nil) = sb |> volume.create("data", "/mnt/data")
 /// ```
 pub fn create(
-  client: Client,
-  sandbox_id: String,
+  sb: ConnectedSandbox,
   name: String,
   path: String,
 ) -> Result(Nil, PocketenvError) {
@@ -56,7 +51,7 @@ pub fn create(
         #(
           "volume",
           json.object([
-            #("sandboxId", json.string(sandbox_id)),
+            #("sandboxId", json.string(sb.data.id)),
             #("name", json.string(name)),
             #("path", json.string(path)),
           ]),
@@ -64,7 +59,7 @@ pub fn create(
       ]),
     )
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.volume.addVolume",
     [],
     body,
@@ -73,9 +68,9 @@ pub fn create(
 }
 
 /// Deletes the volume identified by `id`.
-pub fn delete(client: Client, id: String) -> Result(Nil, PocketenvError) {
+pub fn delete(sb: ConnectedSandbox, id: String) -> Result(Nil, PocketenvError) {
   use _ <- result.try(do_post(
-    client,
+    sb.client,
     "/xrpc/io.pocketenv.volume.deleteVolume",
     [#("id", id)],
     "{}",
