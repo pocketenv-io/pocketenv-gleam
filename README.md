@@ -8,7 +8,7 @@ access to sandboxes, environment variables, secrets, files, volumes, services,
 ports, and networking.
 
 ```sh
-gleam add pocketenv
+gleam add pocketenv@1
 ```
 
 ## Usage
