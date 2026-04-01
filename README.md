@@ -33,7 +33,7 @@ import gleam/option.{None, Some}
 import gleam/io
 
 pub fn main() {
-  let client = pocketenv.new_client("https://pocketenv.io", "your-token")
+  let client = pocketenv.new_client( "your-token")
 
   let assert Ok(sb) =
     client
