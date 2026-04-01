@@ -44,7 +44,7 @@ pub fn main() {
 
   // List all sandboxes
   let assert Ok(#(sandboxes, _total)) = sandbox.list(client, None, None)
-  io.debug(sandboxes)
+  echo sandboxes
 
   // Start, exec, then stop the sandbox
   let assert Ok(Nil) = sb |> sandbox.start(None, None)
@@ -226,11 +226,11 @@ pub fn main() {
 
   // Expose a port and get a preview URL
   let assert Ok(preview_url) = sb |> network.expose(3000, Some("Dev server"))
-  io.debug(preview_url)
+  echo preview_url
 
   // List currently exposed ports
   let assert Ok(exposed) = sb |> ports.list()
-  io.debug(exposed)
+  echo exposed
 
   // Unexpose the port
   let assert Ok(Nil) = sb |> network.unexpose(3000)
