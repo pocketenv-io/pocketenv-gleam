@@ -1,5 +1,5 @@
 name = "pocketenv"
-version = "0.1.0"
+version = "1.0.0"
 
 description = "Gleam SDK for Pocketenv"
 licences = ["MIT"]
