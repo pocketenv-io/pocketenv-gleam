@@ -2,6 +2,7 @@
 # You typically do not need to edit this file
 
 packages = [
+  { name = "blake2", version = "1.0.4", build_tools = ["mix"], requirements = [], otp_app = "blake2", source = "hex", outer_checksum = "E9F4120D163BA14D86304195E50745FA18483E6AD2BE94C864AE449BBDD6A189" },
   { name = "chacha20", version = "0.3.6", build_tools = ["mix"], requirements = [], otp_app = "chacha20", source = "hex", outer_checksum = "40BC6B1F4816661C07A3244D46D74640F108F69EB61F96D2DD22DCBA0E7FCA38" },
   { name = "curve25519", version = "0.1.4", build_tools = ["mix"], requirements = [], otp_app = "curve25519", source = "hex", outer_checksum = "3460590592DA61D5D0C309E2EC469290963129BFB6EE6E5F692AE8E0334161B3" },
   { name = "ed25519", version = "0.2.5", build_tools = ["mix"], requirements = [], otp_app = "ed25519", source = "hex", outer_checksum = "87233BFC85D0BE366EDDF870B6C021396FA34BDC48472AA8582B7333D1459147" },
@@ -18,6 +19,7 @@ packages = [
 ]
 
 [requirements]
+blake2 = { version = ">= 1.0.0 and < 2.0.0" }
 gleam_http = { version = ">= 4.0.0 and < 5.0.0" }
 gleam_httpc = { version = ">= 5.0.0 and < 6.0.0" }
 gleam_json = { version = ">= 3.0.0 and < 4.0.0" }

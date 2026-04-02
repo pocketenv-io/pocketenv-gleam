@@ -9,6 +9,6 @@
 %%   4. Output = eph_pk (32 bytes) || ciphertext
 box_seal(Message, RecipientPK) ->
     {EphPK, EphSK} = crypto:generate_key(ecdh, x25519),
-    Nonce = crypto:hash({blake2b, 24}, <<EphPK/binary, RecipientPK/binary>>),
+    Nonce = 'Elixir.Blake2':hash2b(<<EphPK/binary, RecipientPK/binary>>, 24),
     {Ciphertext, _State} = 'Elixir.Kcl':box(Message, Nonce, EphSK, RecipientPK),
     <<EphPK/binary, Ciphertext/binary>>.
