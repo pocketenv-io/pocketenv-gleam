@@ -38,7 +38,7 @@ pub fn redact(value: String) -> String {
 
 // --- FFI ---
 
-@external(erlang, "enacl", "box_seal")
+@external(erlang, "pocketenv_crypto_ffi", "box_seal")
 fn box_seal(message: BitArray, public_key: BitArray) -> BitArray
 
 @external(erlang, "binary", "decode_hex")

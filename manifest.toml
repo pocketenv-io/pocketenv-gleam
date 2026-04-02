@@ -2,19 +2,25 @@
 # You typically do not need to edit this file
 
 packages = [
-  { name = "enacl", version = "1.2.1", build_tools = ["rebar3"], requirements = [], otp_app = "enacl", source = "hex", outer_checksum = "67BBBEDDD2564DC899A3DCBC3765CD6AD71629134F1E500A50EC071F0F75E552" },
+  { name = "chacha20", version = "0.3.6", build_tools = ["mix"], requirements = [], otp_app = "chacha20", source = "hex", outer_checksum = "40BC6B1F4816661C07A3244D46D74640F108F69EB61F96D2DD22DCBA0E7FCA38" },
+  { name = "curve25519", version = "0.1.4", build_tools = ["mix"], requirements = [], otp_app = "curve25519", source = "hex", outer_checksum = "3460590592DA61D5D0C309E2EC469290963129BFB6EE6E5F692AE8E0334161B3" },
+  { name = "ed25519", version = "0.2.5", build_tools = ["mix"], requirements = [], otp_app = "ed25519", source = "hex", outer_checksum = "87233BFC85D0BE366EDDF870B6C021396FA34BDC48472AA8582B7333D1459147" },
+  { name = "equivalex", version = "0.1.4", build_tools = ["mix"], requirements = [], otp_app = "equivalex", source = "hex", outer_checksum = "E63AF7625D18D1BE6CB88AAEEF5046BE6C0B3D7AA8E735A51203ED17076BE8BA" },
   { name = "gleam_erlang", version = "1.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_erlang", source = "hex", outer_checksum = "1124AD3AA21143E5AF0FC5CF3D9529F6DB8CA03E43A55711B60B6B7B3874375C" },
   { name = "gleam_http", version = "4.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_http", source = "hex", outer_checksum = "82EA6A717C842456188C190AFB372665EA56CE13D8559BF3B1DD9E40F619EE0C" },
   { name = "gleam_httpc", version = "5.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_http", "gleam_stdlib"], otp_app = "gleam_httpc", source = "hex", outer_checksum = "C545172618D07811494E97AAA4A0FB34DA6F6D0061FDC8041C2F8E3BE2B2E48F" },
   { name = "gleam_json", version = "3.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_json", source = "hex", outer_checksum = "44FDAA8847BE8FC48CA7A1C089706BD54BADCC4C45B237A992EDDF9F2CDB2836" },
   { name = "gleam_stdlib", version = "0.70.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "86949BF5D1F0E4AC0AB5B06F235D8A5CC11A2DFC33BF22F752156ED61CA7D0FF" },
   { name = "gleeunit", version = "1.9.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "DA9553CE58B67924B3C631F96FE3370C49EB6D6DC6B384EC4862CC4AAA718F3C" },
+  { name = "kcl", version = "0.6.6", build_tools = ["mix"], requirements = ["curve25519", "ed25519", "poly1305", "salsa20"], otp_app = "kcl", source = "hex", outer_checksum = "4470B99394DC32EA015E586E66A031E4DF1AB8AD8329B49B8CA79C41711C3C16" },
+  { name = "poly1305", version = "0.4.5", build_tools = ["mix"], requirements = ["chacha20", "equivalex"], otp_app = "poly1305", source = "hex", outer_checksum = "2A24B02A57D56C2B459F1D6265391843A6F3591137DB7400D32B7EA26B9E3EF1" },
+  { name = "salsa20", version = "0.3.4", build_tools = ["mix"], requirements = [], otp_app = "salsa20", source = "hex", outer_checksum = "B6BD54042E4FC419D9B7956D2D1C0A730DC3C549D847842C0AC3553BE8EBEDF0" },
 ]
 
 [requirements]
-enacl = { version = ">= 1.2.1 and < 2.0.0" }
 gleam_http = { version = ">= 4.0.0 and < 5.0.0" }
 gleam_httpc = { version = ">= 5.0.0 and < 6.0.0" }
 gleam_json = { version = ">= 3.0.0 and < 4.0.0" }
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
+kcl = { version = ">= 0.1.0 and < 1.0.0" }
