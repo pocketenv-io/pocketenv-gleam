@@ -11,6 +11,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pocketenv.{type PocketenvError, JsonDecodeError, do_get, do_post}
+import pocketenv/crypto
 import pocketenv/sandbox.{type ConnectedSandbox}
 
 /// A secret stored in a sandbox. Only the `name` is exposed; the value is never returned.
@@ -52,6 +53,8 @@ pub fn list(
 }
 
 /// Creates or updates a secret named `name` with `value`.
+/// The value is encrypted client-side with the server's public key before
+/// transmission and is never returned by the API.
 ///
 /// ## Example
 ///
@@ -63,6 +66,7 @@ pub fn put(
   name: String,
   value: String,
 ) -> Result(Nil, PocketenvError) {
+  let encrypted = crypto.seal(value)
   let body =
     json.to_string(
       json.object([
@@ -71,7 +75,7 @@ pub fn put(
           json.object([
             #("sandboxId", json.string(sb.data.id)),
             #("name", json.string(name)),
-            #("value", json.string(value)),
+            #("value", json.string(encrypted)),
           ]),
         ),
       ]),

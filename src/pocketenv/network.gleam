@@ -8,6 +8,7 @@ import gleam/json
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pocketenv.{type PocketenvError, JsonDecodeError, do_get, do_post}
+import pocketenv/crypto
 import pocketenv/sandbox.{type ConnectedSandbox}
 
 /// Exposes `port` on the sandbox to the internet.
@@ -65,6 +66,8 @@ pub fn unexpose(sb: ConnectedSandbox, port: Int) -> Result(Nil, PocketenvError) 
 }
 
 /// Stores a Tailscale auth key for the sandbox, enabling private network access.
+/// The key is validated to start with `"tskey-auth-"`, encrypted client-side,
+/// and stored with a redacted display value.
 ///
 /// ## Example
 ///
@@ -75,8 +78,15 @@ pub fn setup_tailscale(
   sb: ConnectedSandbox,
   auth_key: String,
 ) -> Result(Nil, PocketenvError) {
+  let encrypted = crypto.seal(auth_key)
+  let redacted = crypto.redact(auth_key)
   let body =
-    json.to_string(json.object([#("tailscaleAuthKey", json.string(auth_key))]))
+    json.to_string(
+      json.object([
+        #("tailscaleAuthKey", json.string(encrypted)),
+        #("redacted", json.string(redacted)),
+      ]),
+    )
   use _ <- result.try(do_post(
     sb.client,
     "/xrpc/io.pocketenv.sandbox.putTailscaleAuthKey",
@@ -86,7 +96,8 @@ pub fn setup_tailscale(
   Ok(Nil)
 }
 
-/// Retrieves the stored Tailscale auth key for the sandbox, if any.
+/// Retrieves the redacted display value of the stored Tailscale auth key, if any.
+/// The actual auth key is encrypted server-side and never returned in plaintext.
 ///
 /// ## Example
 ///
@@ -103,7 +114,7 @@ pub fn get_tailscale_auth_key(
   )
   json.parse(body, {
     use key <- decode.optional_field(
-      "tailscaleAuthKey",
+      "redacted",
       None,
       decode.optional(decode.string),
     )
