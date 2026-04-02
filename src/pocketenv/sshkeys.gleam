@@ -86,8 +86,11 @@ pub fn put(
         #("redacted", json.string(redacted)),
       ]),
     )
-  use _ <- result.try(
-    do_post(sb.client, "/xrpc/io.pocketenv.sandbox.putSshKeys", [], body),
-  )
+  use _ <- result.try(do_post(
+    sb.client,
+    "/xrpc/io.pocketenv.sandbox.putSshKeys",
+    [],
+    body,
+  ))
   Ok(Nil)
 }
