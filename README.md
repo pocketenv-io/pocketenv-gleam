@@ -2,6 +2,7 @@
 
 [![Package Version](https://img.shields.io/hexpm/v/pocketenv)](https://hex.pm/packages/pocketenv)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pocketenv/)
+[![test](https://github.com/pocketenv-io/pocketenv-gleam/actions/workflows/test.yml/badge.svg)](https://github.com/pocketenv-io/pocketenv-gleam/actions/workflows/test.yml)
 
 A Gleam client library for the [Pocketenv](https://pocketenv.io) API, providing
 access to sandboxes, environment variables, secrets, files, volumes, services,
