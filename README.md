@@ -6,10 +6,10 @@
 
 A Gleam client library for the [Pocketenv](https://pocketenv.io) API, providing
 access to sandboxes, environment variables, secrets, files, volumes, services,
-ports, and networking.
+ports, networking, and file transfers.
 
 ```sh
-gleam add pocketenv@1
+gleam add pocketenv@1.2
 ```
 
 ## Usage
@@ -238,6 +238,35 @@ pub fn main() {
 
   // Configure Tailscale networking
   let assert Ok(Nil) = sb |> network.setup_tailscale("tskey-auth-xxxx")
+}
+```
+
+### File transfers
+
+Upload a local file or directory into a sandbox, download from a sandbox, or
+copy between two sandboxes. Files are transferred via a gzip'd tar archive.
+Ignore patterns from `.pocketenvignore`, `.gitignore`, `.npmignore`, and
+`.dockerignore` are respected during upload.
+
+```gleam
+import pocketenv
+import pocketenv/sandbox
+import pocketenv/copy
+import gleam/option.{Some}
+
+pub fn main() {
+  let client = pocketenv.new_client("your-token")
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
+
+  // Upload a local directory into the sandbox
+  let assert Ok(Nil) = sb |> copy.upload("./dist", "/app/dist")
+
+  // Download a path from the sandbox to a local directory
+  let assert Ok(Nil) = sb |> copy.download("/app/logs", "./logs")
+
+  // Copy a path from this sandbox to another sandbox (no local I/O)
+  let assert Ok(Nil) = sb |> copy.copy_to("other-sandbox-id", "/app/data", "/app/data")
 }
 ```
 

@@ -12,9 +12,9 @@ import gleam/option.{type Option, None}
 import gleam/result
 import gleam/string
 
-/// Holds the base URL and bearer token used for every API request.
+/// Holds the base URL, storage URL, and bearer token used for every API request.
 pub type Client {
-  Client(base_url: String, token: String)
+  Client(base_url: String, storage_url: String, token: String)
 }
 
 /// Errors that can be returned by any API call.
@@ -45,7 +45,10 @@ pub type Profile {
 /// The default base URL for the Pocketenv API.
 pub const default_base_url = "https://api.pocketenv.io"
 
-/// Creates a new API client using the default base URL (`https://api.pocketenv.io`).
+/// The default base URL for the Pocketenv storage service.
+pub const default_storage_url = "https://sandbox.pocketenv.io"
+
+/// Creates a new API client using the default URLs.
 ///
 /// ## Example
 ///
@@ -53,10 +56,14 @@ pub const default_base_url = "https://api.pocketenv.io"
 /// let client = pocketenv.new_client("your-token")
 /// ```
 pub fn new_client(token: String) -> Client {
-  Client(base_url: default_base_url, token: token)
+  Client(
+    base_url: default_base_url,
+    storage_url: default_storage_url,
+    token: token,
+  )
 }
 
-/// Creates a new API client with a custom base URL.
+/// Creates a new API client with a custom API base URL (storage URL stays at the default).
 ///
 /// ## Example
 ///
@@ -64,7 +71,22 @@ pub fn new_client(token: String) -> Client {
 /// let client = pocketenv.new_client_with_base_url("https://self-hosted.example.com", "your-token")
 /// ```
 pub fn new_client_with_base_url(base_url: String, token: String) -> Client {
-  Client(base_url: base_url, token: token)
+  Client(base_url: base_url, storage_url: default_storage_url, token: token)
+}
+
+/// Creates a new API client with custom API and storage URLs.
+///
+/// ## Example
+///
+/// ```gleam
+/// let client = pocketenv.new_client_with_urls("https://api.example.com", "https://storage.example.com", "your-token")
+/// ```
+pub fn new_client_with_urls(
+  base_url: String,
+  storage_url: String,
+  token: String,
+) -> Client {
+  Client(base_url: base_url, storage_url: storage_url, token: token)
 }
 
 /// Fetches the profile of the authenticated actor.

@@ -1,9 +1,11 @@
+import gleam/bit_array
 import gleam/int
 import gleam/json
 import gleam/option.{None, Some}
 import gleeunit
 import mock_server
 import pocketenv
+import pocketenv/copy
 import pocketenv/env
 import pocketenv/files
 import pocketenv/ports
@@ -456,4 +458,234 @@ pub fn sandbox_exec_api_error_test() {
   let result = stub_connected("s1", client) |> sandbox.exec("ls")
   mock_server.stop(pid)
   assert result == Error(pocketenv.ApiError(403))
+}
+
+// ---- copy FFI helpers -------------------------------------------------------
+
+@external(erlang, "pocketenv_copy_ffi", "random_hex")
+fn random_hex(n: Int) -> String
+
+@external(erlang, "pocketenv_copy_ffi", "write_file")
+fn write_file(path: String, data: BitArray) -> Result(Nil, String)
+
+@external(erlang, "pocketenv_copy_ffi", "compress")
+fn compress(path: String) -> Result(String, String)
+
+@external(erlang, "pocketenv_copy_ffi", "decompress")
+fn decompress(archive: String, dest: String) -> Result(Nil, String)
+
+@external(erlang, "pocketenv_copy_ffi", "file_exists")
+fn file_exists(path: String) -> Bool
+
+fn tmp_dir() -> String {
+  "/tmp/pocketenv_test_" <> random_hex(8)
+}
+
+// ---- copy: compress / decompress roundtrip ----------------------------------
+
+pub fn compress_decompress_single_file_test() {
+  let dir = tmp_dir()
+  let src = dir <> "/src/hello.txt"
+  let assert Ok(Nil) = write_file(src, bit_array.from_string("hello world"))
+  let assert Ok(archive) = compress(src)
+  let dest = dir <> "/out"
+  let assert Ok(Nil) = decompress(archive, dest)
+  assert file_exists(dest <> "/hello.txt")
+}
+
+pub fn compress_decompress_directory_test() {
+  let dir = tmp_dir()
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/a.txt", bit_array.from_string("a"))
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/sub/b.txt", bit_array.from_string("b"))
+  let assert Ok(archive) = compress(dir <> "/src")
+  let dest = dir <> "/out"
+  let assert Ok(Nil) = decompress(archive, dest)
+  assert file_exists(dest <> "/a.txt")
+  assert file_exists(dest <> "/sub/b.txt")
+}
+
+// ---- copy: ignore file support ----------------------------------------------
+
+pub fn compress_gitignore_excludes_files_test() {
+  let dir = tmp_dir()
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/keep.txt", bit_array.from_string("keep"))
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/skip.log", bit_array.from_string("skip"))
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/.gitignore", bit_array.from_string("*.log\n"))
+  let assert Ok(archive) = compress(dir <> "/src")
+  let dest = dir <> "/out"
+  let assert Ok(Nil) = decompress(archive, dest)
+  assert file_exists(dest <> "/keep.txt")
+  assert !file_exists(dest <> "/skip.log")
+}
+
+pub fn compress_pocketenvignore_test() {
+  let dir = tmp_dir()
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/main.go", bit_array.from_string("package main"))
+  let assert Ok(Nil) =
+    write_file(
+      dir <> "/src/build/output",
+      bit_array.from_string("compiled"),
+    )
+  let assert Ok(Nil) =
+    write_file(
+      dir <> "/src/.pocketenvignore",
+      bit_array.from_string("build/\n"),
+    )
+  let assert Ok(archive) = compress(dir <> "/src")
+  let dest = dir <> "/out"
+  let assert Ok(Nil) = decompress(archive, dest)
+  assert file_exists(dest <> "/main.go")
+  assert !file_exists(dest <> "/build/output")
+}
+
+pub fn compress_negation_pattern_test() {
+  let dir = tmp_dir()
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/a.log", bit_array.from_string("a"))
+  let assert Ok(Nil) =
+    write_file(dir <> "/src/keep.log", bit_array.from_string("keep"))
+  // Ignore all .log files, but re-include keep.log
+  let assert Ok(Nil) =
+    write_file(
+      dir <> "/src/.gitignore",
+      bit_array.from_string("*.log\n!keep.log\n"),
+    )
+  let assert Ok(archive) = compress(dir <> "/src")
+  let dest = dir <> "/out"
+  let assert Ok(Nil) = decompress(archive, dest)
+  assert !file_exists(dest <> "/a.log")
+  assert file_exists(dest <> "/keep.log")
+}
+
+// ---- copy: HTTP tests -------------------------------------------------------
+
+fn stub_connected_with_storage(
+  id: String,
+  client: pocketenv.Client,
+) -> sandbox.ConnectedSandbox {
+  sandbox.connect(
+    sandbox.Sandbox(
+      id: id,
+      name: "stub",
+      provider: None,
+      base_sandbox: None,
+      display_name: None,
+      uri: None,
+      description: None,
+      topics: None,
+      logo: None,
+      readme: None,
+      repo: None,
+      vcpus: None,
+      memory: None,
+      disk: None,
+      installs: None,
+      status: None,
+      started_at: None,
+      created_at: "2024-01-01",
+    ),
+    client,
+  )
+}
+
+pub fn copy_to_ok_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pushDirectory",
+    200,
+    "{\"uuid\":\"test-uuid\"}",
+  )
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pullDirectory",
+    200,
+    "{}",
+  )
+  let client =
+    pocketenv.new_client_with_urls(base_url(port), base_url(port), "tok")
+  let result =
+    stub_connected_with_storage("src-sb", client)
+    |> copy.copy_to("dst-sb", "/src", "/dst")
+  mock_server.stop(pid)
+  assert result == Ok(Nil)
+}
+
+pub fn copy_to_push_error_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pushDirectory",
+    500,
+    "{}",
+  )
+  let client =
+    pocketenv.new_client_with_urls(base_url(port), base_url(port), "tok")
+  let result =
+    stub_connected_with_storage("sb", client)
+    |> copy.copy_to("dst", "/a", "/b")
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(500))
+}
+
+pub fn copy_to_pull_error_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pushDirectory",
+    200,
+    "{\"uuid\":\"u1\"}",
+  )
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pullDirectory",
+    403,
+    "{}",
+  )
+  let client =
+    pocketenv.new_client_with_urls(base_url(port), base_url(port), "tok")
+  let result =
+    stub_connected_with_storage("sb", client)
+    |> copy.copy_to("dst", "/a", "/b")
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(403))
+}
+
+pub fn download_push_error_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pushDirectory",
+    401,
+    "{}",
+  )
+  let client =
+    pocketenv.new_client_with_urls(base_url(port), base_url(port), "tok")
+  let result =
+    stub_connected_with_storage("sb", client)
+    |> copy.download("/remote", tmp_dir())
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(401))
+}
+
+pub fn upload_pull_error_test() {
+  let dir = tmp_dir()
+  let src = dir <> "/src/file.txt"
+  let assert Ok(Nil) = write_file(src, bit_array.from_string("content"))
+  let #(port, pid) = mock_server.start()
+  // Storage upload succeeds
+  mock_server.set_response("/cp", 200, "{\"uuid\":\"u1\"}")
+  // Pull fails
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.pullDirectory",
+    500,
+    "{}",
+  )
+  let client =
+    pocketenv.new_client_with_urls(base_url(port), base_url(port), "tok")
+  let result =
+    stub_connected_with_storage("sb", client)
+    |> copy.upload(src, "/remote")
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(500))
 }

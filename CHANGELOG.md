@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-05
+
+### Added
+
+- `pocketenv/copy` module with three file-transfer operations:
+  - `upload/3` — compress a local file or directory and extract it into a sandbox path
+  - `download/3` — push a sandbox path to storage and extract it locally
+  - `copy_to/4` — copy a path from one sandbox to another with no local I/O
+- Ignore-file support in `upload`: patterns from `.pocketenvignore`, `.gitignore`, `.npmignore`, and `.dockerignore` are applied during compression (supports `*`, `**`, `?`, negation via `!`, last-match-wins semantics)
+- `storage_url` field on `Client` (defaults to `https://sandbox.pocketenv.io`); configurable via `new_client_with_urls/3` for self-hosted or test setups
+
 ## [1.1.2] - 2026-04-02
 
 ### Fixed
