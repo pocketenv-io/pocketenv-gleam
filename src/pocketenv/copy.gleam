@@ -30,7 +30,10 @@ fn temp_path() -> String
 fn compress_ffi(source_path: String) -> Result(String, String)
 
 @external(erlang, "pocketenv_copy_ffi", "decompress")
-fn decompress_ffi(archive_path: String, dest_path: String) -> Result(Nil, String)
+fn decompress_ffi(
+  archive_path: String,
+  dest_path: String,
+) -> Result(Nil, String)
 
 @external(erlang, "pocketenv_copy_ffi", "read_file")
 fn read_file(path: String) -> Result(BitArray, String)
@@ -56,10 +59,12 @@ fn push_directory(
   directory_path: String,
 ) -> Result(String, PocketenvError) {
   let body =
-    json.to_string(json.object([
-      #("sandboxId", json.string(sandbox_id)),
-      #("directoryPath", json.string(directory_path)),
-    ]))
+    json.to_string(
+      json.object([
+        #("sandboxId", json.string(sandbox_id)),
+        #("directoryPath", json.string(directory_path)),
+      ]),
+    )
   use resp_body <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.sandbox.pushDirectory",
@@ -82,11 +87,13 @@ fn pull_directory(
   directory_path: String,
 ) -> Result(Nil, PocketenvError) {
   let body =
-    json.to_string(json.object([
-      #("uuid", json.string(uuid)),
-      #("sandboxId", json.string(sandbox_id)),
-      #("directoryPath", json.string(directory_path)),
-    ]))
+    json.to_string(
+      json.object([
+        #("uuid", json.string(uuid)),
+        #("sandboxId", json.string(sandbox_id)),
+        #("directoryPath", json.string(directory_path)),
+      ]),
+    )
   use _ <- result.try(do_post(
     client,
     "/xrpc/io.pocketenv.sandbox.pullDirectory",
@@ -103,7 +110,9 @@ fn upload_to_storage(
   token: String,
   storage_url: String,
 ) -> Result(String, PocketenvError) {
-  use content <- result.try(read_file(archive_path) |> result.map_error(HttpError))
+  use content <- result.try(
+    read_file(archive_path) |> result.map_error(HttpError),
+  )
   let boundary = "FormBoundary" <> random_hex(8)
   let crlf = "\r\n"
   let body =
@@ -229,9 +238,12 @@ pub fn download(
   use uuid <- result.try(push_directory(sb.client, sb.data.id, sandbox_path))
   let archive = temp_path()
   let result = {
-    use _ <- result.try(
-      download_from_storage(uuid, archive, sb.client.token, sb.client.storage_url),
-    )
+    use _ <- result.try(download_from_storage(
+      uuid,
+      archive,
+      sb.client.token,
+      sb.client.storage_url,
+    ))
     decompress_ffi(archive, local_path) |> result.map_error(HttpError)
   }
   let _ = delete_file(archive)

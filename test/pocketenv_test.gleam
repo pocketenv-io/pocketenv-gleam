@@ -528,10 +528,7 @@ pub fn compress_pocketenvignore_test() {
   let assert Ok(Nil) =
     write_file(dir <> "/src/main.go", bit_array.from_string("package main"))
   let assert Ok(Nil) =
-    write_file(
-      dir <> "/src/build/output",
-      bit_array.from_string("compiled"),
-    )
+    write_file(dir <> "/src/build/output", bit_array.from_string("compiled"))
   let assert Ok(Nil) =
     write_file(
       dir <> "/src/.pocketenvignore",
