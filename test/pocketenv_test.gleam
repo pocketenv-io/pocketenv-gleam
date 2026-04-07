@@ -5,6 +5,7 @@ import gleam/option.{None, Some}
 import gleeunit
 import mock_server
 import pocketenv
+import pocketenv/backup
 import pocketenv/copy
 import pocketenv/env
 import pocketenv/files
@@ -685,4 +686,170 @@ pub fn upload_pull_error_test() {
     |> copy.upload(src, "/remote")
   mock_server.stop(pid)
   assert result == Error(pocketenv.ApiError(500))
+}
+
+// ---- backup: decoder --------------------------------------------------------
+
+pub fn backup_decoder_full_test() {
+  let json_str =
+    "{\"id\":\"bk1\",\"directory\":\"/app\",\"description\":\"pre-deploy\",\"expiresAt\":\"2024-12-31\",\"createdAt\":\"2024-01-01\"}"
+  let result = json.parse(json_str, backup.backup_decoder())
+  assert result
+    == Ok(backup.Backup(
+      id: "bk1",
+      directory: "/app",
+      description: Some("pre-deploy"),
+      expires_at: Some("2024-12-31"),
+      created_at: "2024-01-01",
+    ))
+}
+
+pub fn backup_decoder_minimal_test() {
+  let json_str =
+    "{\"id\":\"bk2\",\"directory\":\"/data\",\"createdAt\":\"2024-06-01\"}"
+  let result = json.parse(json_str, backup.backup_decoder())
+  assert result
+    == Ok(backup.Backup(
+      id: "bk2",
+      directory: "/data",
+      description: None,
+      expires_at: None,
+      created_at: "2024-06-01",
+    ))
+}
+
+pub fn backup_decoder_missing_required_test() {
+  let json_str = "{\"id\":\"bk3\",\"createdAt\":\"2024-06-01\"}"
+  let result = json.parse(json_str, backup.backup_decoder())
+  assert result |> is_error
+}
+
+// ---- backup: HTTP -----------------------------------------------------------
+
+pub fn backup_create_ok_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.createBackup",
+    200,
+    "{}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result =
+    stub_connected("s1", client)
+    |> backup.create("/app", Some("pre-deploy"), None)
+  mock_server.stop(pid)
+  assert result == Ok(Nil)
+}
+
+pub fn backup_create_with_ttl_ok_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.createBackup",
+    200,
+    "{}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result =
+    stub_connected("s1", client)
+    |> backup.create("/app", None, Some(3600))
+  mock_server.stop(pid)
+  assert result == Ok(Nil)
+}
+
+pub fn backup_create_api_error_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.createBackup",
+    403,
+    "{}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result =
+    stub_connected("s1", client)
+    |> backup.create("/app", None, None)
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(403))
+}
+
+pub fn backup_list_ok_test() {
+  let resp =
+    "{\"backups\":[{\"id\":\"bk1\",\"directory\":\"/app\",\"createdAt\":\"2024-01-01\"},{\"id\":\"bk2\",\"directory\":\"/data\",\"description\":\"snap\",\"createdAt\":\"2024-02-01\"}]}"
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.getBackups",
+    200,
+    resp,
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result = stub_connected("s1", client) |> backup.list()
+  mock_server.stop(pid)
+  assert result
+    == Ok([
+      backup.Backup(
+        id: "bk1",
+        directory: "/app",
+        description: None,
+        expires_at: None,
+        created_at: "2024-01-01",
+      ),
+      backup.Backup(
+        id: "bk2",
+        directory: "/data",
+        description: Some("snap"),
+        expires_at: None,
+        created_at: "2024-02-01",
+      ),
+    ])
+}
+
+pub fn backup_list_empty_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.getBackups",
+    200,
+    "{\"backups\":[]}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result = stub_connected("s1", client) |> backup.list()
+  mock_server.stop(pid)
+  assert result == Ok([])
+}
+
+pub fn backup_list_api_error_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.getBackups",
+    401,
+    "{}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result = stub_connected("s1", client) |> backup.list()
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(401))
+}
+
+pub fn backup_restore_ok_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.restoreBackup",
+    200,
+    "{}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result = stub_connected("s1", client) |> backup.restore("bk1")
+  mock_server.stop(pid)
+  assert result == Ok(Nil)
+}
+
+pub fn backup_restore_api_error_test() {
+  let #(port, pid) = mock_server.start()
+  mock_server.set_response(
+    "/xrpc/io.pocketenv.sandbox.restoreBackup",
+    404,
+    "{}",
+  )
+  let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
+  let result = stub_connected("s1", client) |> backup.restore("missing")
+  mock_server.stop(pid)
+  assert result == Error(pocketenv.ApiError(404))
 }
