@@ -728,11 +728,7 @@ pub fn backup_decoder_missing_required_test() {
 
 pub fn backup_create_ok_test() {
   let #(port, pid) = mock_server.start()
-  mock_server.set_response(
-    "/xrpc/io.pocketenv.sandbox.createBackup",
-    200,
-    "{}",
-  )
+  mock_server.set_response("/xrpc/io.pocketenv.sandbox.createBackup", 200, "{}")
   let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
   let result =
     stub_connected("s1", client)
@@ -743,11 +739,7 @@ pub fn backup_create_ok_test() {
 
 pub fn backup_create_with_ttl_ok_test() {
   let #(port, pid) = mock_server.start()
-  mock_server.set_response(
-    "/xrpc/io.pocketenv.sandbox.createBackup",
-    200,
-    "{}",
-  )
+  mock_server.set_response("/xrpc/io.pocketenv.sandbox.createBackup", 200, "{}")
   let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
   let result =
     stub_connected("s1", client)
@@ -758,11 +750,7 @@ pub fn backup_create_with_ttl_ok_test() {
 
 pub fn backup_create_api_error_test() {
   let #(port, pid) = mock_server.start()
-  mock_server.set_response(
-    "/xrpc/io.pocketenv.sandbox.createBackup",
-    403,
-    "{}",
-  )
+  mock_server.set_response("/xrpc/io.pocketenv.sandbox.createBackup", 403, "{}")
   let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
   let result =
     stub_connected("s1", client)
@@ -775,11 +763,7 @@ pub fn backup_list_ok_test() {
   let resp =
     "{\"backups\":[{\"id\":\"bk1\",\"directory\":\"/app\",\"createdAt\":\"2024-01-01\"},{\"id\":\"bk2\",\"directory\":\"/data\",\"description\":\"snap\",\"createdAt\":\"2024-02-01\"}]}"
   let #(port, pid) = mock_server.start()
-  mock_server.set_response(
-    "/xrpc/io.pocketenv.sandbox.getBackups",
-    200,
-    resp,
-  )
+  mock_server.set_response("/xrpc/io.pocketenv.sandbox.getBackups", 200, resp)
   let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
   let result = stub_connected("s1", client) |> backup.list()
   mock_server.stop(pid)
@@ -817,11 +801,7 @@ pub fn backup_list_empty_test() {
 
 pub fn backup_list_api_error_test() {
   let #(port, pid) = mock_server.start()
-  mock_server.set_response(
-    "/xrpc/io.pocketenv.sandbox.getBackups",
-    401,
-    "{}",
-  )
+  mock_server.set_response("/xrpc/io.pocketenv.sandbox.getBackups", 401, "{}")
   let client = pocketenv.new_client_with_base_url(base_url(port), "tok")
   let result = stub_connected("s1", client) |> backup.list()
   mock_server.stop(pid)
