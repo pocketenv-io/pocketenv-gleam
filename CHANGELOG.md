@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-04-07
+
+### Added
+
+- `pocketenv/backup` module with three operations:
+  - `create/4` — snapshot a sandbox directory with optional description and TTL
+  - `list/1` — list all backups for a sandbox
+  - `restore/2` — restore a sandbox from a backup by ID
+
 ## [1.2.0] - 2026-04-05
 
 ### Added

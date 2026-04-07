@@ -9,7 +9,7 @@ access to sandboxes, environment variables, secrets, files, volumes, services,
 ports, networking, and file transfers.
 
 ```sh
-gleam add pocketenv@1.2
+gleam add pocketenv@1.3
 ```
 
 ## Usage
@@ -267,6 +267,35 @@ pub fn main() {
 
   // Copy a path from this sandbox to another sandbox (no local I/O)
   let assert Ok(Nil) = sb |> copy.copy_to("other-sandbox-id", "/app/data", "/app/data")
+}
+```
+
+### Backups
+
+```gleam
+import pocketenv
+import pocketenv/sandbox
+import pocketenv/backup
+import gleam/option.{None, Some}
+
+pub fn main() {
+  let client = pocketenv.new_client("your-token")
+  let assert Ok(Some(sandbox_data)) = sandbox.get(client, "sandbox-abc123")
+  let sb = sandbox_data |> sandbox.connect(client)
+
+  // Create a backup of /app with an optional description and TTL (seconds)
+  let assert Ok(Nil) = sb |> backup.create("/app", Some("pre-deploy"), None)
+
+  // List all backups
+  let assert Ok(backups) = sb |> backup.list()
+
+  // Restore a backup by ID
+  case backups {
+    [first, ..] -> {
+      let assert Ok(Nil) = sb |> backup.restore(first.id)
+    }
+    [] -> Nil
+  }
 }
 ```
 
